@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego: Uno no corresponde</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#ef4444">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Uno no corresponde">
+    
+    <!-- PWA Icons -->
+    <link rel="icon" type="image/jpeg" href="templateACV-1 copia.jpg">
+    <link rel="apple-touch-icon" href="templateACV-1 copia.jpg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+            /* El fondo se aplicará dinámicamente con JavaScript */
+            background-color: #111; /* Color de fondo base antes de la selección */
+        }
+        .image-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, opacity 0.3s ease;
+        }
+        .image-card:hover:not(.disabled) {
+            transform: scale(1.03);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .correct-answer {
+            box-shadow: 0 0 0 4px #22c55e; /* Borde verde para la correcta */
+        }
+        .wrong-answer {
+            box-shadow: 0 0 0 4px #ef4444; /* Borde rojo para la incorrecta */
+        }
+        .disabled {
+            pointer-events: none;
+        }
+        /* Clase para atenuar las tarjetas que no fueron seleccionadas */
+        .faded {
+            opacity: 0.5;
+        }
+        #timer-bar {
+            transition: width 1s linear, background-color 0.5s ease;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 transition-colors duration-500">
+    
+    <!-- PANTALLA DE SELECCIÓN DE FONDO -->
+    <div id="start-screen" class="w-full max-w-lg text-center">
+        <h1 class="text-3xl md:text-4xl font-bold text-white mb-4">Bienvenido a</h1>
+        <h2 class="text-4xl md:text-5xl font-bold text-white mb-10" style="color: #ef4444;">Uno no corresponde</h2>
+        <p class="text-xl text-slate-200 mb-6">Elige un template para comenzar:</p>
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+            <button id="bg-red-button" class="bg-red-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-red-700 transition-transform hover:scale-105 w-full sm:w-auto">
+                Template Rojo
+            </button>
+            <button id="bg-green-button" class="bg-emerald-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-emerald-700 transition-transform hover:scale-105 w-full sm:w-auto">
+                Template Verde
+            </button>
+        </div>
+    </div>
+
+
+    <!-- Contenido principal del juego, inicialmente oculto -->
+    <div id="main-card" class="hidden w-full max-w-4xl mx-auto rounded-2xl p-6 md:p-8">
+
+        <div id="game-content">
+            <div class="flex justify-between items-center border-b border-white/30 pb-4 mb-4">
+                <h1 id="game-title" class="text-2xl md:text-3xl font-bold text-white">Uno no corresponde</h1>
+                <div class="text-right">
+                    <p class="text-slate-200">Puntaje: <span id="score" class="font-bold text-lg text-white">0</span></p>
+                    <p class="text-slate-300 text-sm">Nivel: <span id="round-counter">1 / 6</span></p>
+                </div>
+            </div>
+
+            <!-- NUEVO: Barra de tiempo -->
+            <div id="timer-container" class="w-full bg-white/30 rounded-full h-2.5 mb-6">
+                <div id="timer-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 100%;"></div>
+            </div>
+
+            <div id="game-container" class="grid grid-cols-2 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+                <div class="image-card bg-slate-50 rounded-xl cursor-pointer aspect-video flex items-center justify-center p-2"><img id="img-0" class="max-h-full max-w-full object-contain rounded-lg" onerror="this.onerror=null;this.src='https://placehold.co/400x300/f87171/fff?text=Error+cargando';"></div>
+                <div class="image-card bg-slate-50 rounded-xl cursor-pointer aspect-video flex items-center justify-center p-2"><img id="img-1" class="max-h-full max-w-full object-contain rounded-lg" onerror="this.onerror=null;this.src='https://placehold.co/400x300/f87171/fff?text=Error+cargando';"></div>
+                <div class="image-card bg-slate-50 rounded-xl cursor-pointer aspect-video flex items-center justify-center p-2"><img id="img-2" class="max-h-full max-w-full object-contain rounded-lg" onerror="this.onerror=null;this.src='https://placehold.co/400x300/f87171/fff?text=Error+cargando';"></div>
+                <div class="image-card bg-slate-50 rounded-xl cursor-pointer aspect-video flex items-center justify-center p-2"><img id="img-3" class="max-h-full max-w-full object-contain rounded-lg" onerror="this.onerror=null;this.src='https://placehold.co/400x300/f87171/fff?text=Error+cargando';"></div>
+            </div>
+
+            <div id="feedback-container" class="hidden min-h-[100px] p-4 rounded-lg mb-6 bg-white/95 backdrop-blur-sm">
+                <h3 id="feedback-title" class="text-xl font-bold"></h3>
+                <p id="feedback-text" class="mt-2 text-slate-700"></p>
+            </div>
+
+            <div id="controls-container" class="flex justify-end">
+                <button id="next-button" class="hidden bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition-colors flex items-center gap-2">
+                    Siguiente
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="final-screen" class="hidden text-center py-10">
+            <h2 id="final-title" class="text-4xl font-bold text-white mb-4">¡Juego Terminado!</h2>
+            <p id="final-subtitle" class="text-xl text-slate-200 mb-8">Tu puntaje final es: <span id="final-score" class="font-bold text-white"></span></p>
+            <button id="restart-button" class="bg-green-600 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-green-700 transition-colors text-lg inline-flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                Jugar de Nuevo
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ######################################################################
+        // ##### INSTRUCCIONES: MODIFICA ESTA SECCIÓN PARA CAMBIAR EL JUEGO #####
+        // ######################################################################
+
+        const nivelesDelJuego = [
+            {
+                // Nivel 1: Paisaje - 3 nítidas + 1 borrosa
+                imagenes: [
+                    "Paisaje_nitido_1.jpg",
+                    "paisaje_nitido_2.jpg",
+                    "Paisaje_Nitido.jpg",
+                    "Paisaje Borroso.jpg"  // NO CORRESPONDE
+                ],
+                respuestaCorrecta: "Paisaje Borroso.jpg",
+                explicacion: "Problemas repentinos de visión en un ojo o en ambos es un síntoma que puede aparecer de forma repentina. Si observás esto, debés actuar con velocidad."
+            },
+            {
+                // Nivel 2: Factores de riesgo - 3 que pertenecen + 1 que no
+                imagenes: [
+                    "beber aclohol pertenece1.jpg",
+                    "comer mal pertenece.jpg",
+                    "fumar pertenece.jpeg",
+                    "comer manzaz no pertenece.jpg"  // NO CORRESPONDE
+                ],
+                respuestaCorrecta: "comer manzaz no pertenece.jpg",
+                explicacion: "Identificar qué comportamientos aumentan o reducen el riesgo es importante para evitar un accidente cerebrovascular."
+            },
+            {
+                // Nivel 3: Síntomas de ACV - 3 que pertenecen + 1 que no
+                imagenes: [
+                    "pertenece0.jpg",
+                    "pertence1.jpeg",
+                    "pertence2.png",
+                    "nopertenece.jpg"  // NO CORRESPONDE
+                ],
+                respuestaCorrecta: "nopertenece.jpg",
+                explicacion: "Esta imagen no corresponde a un síntoma de ACV. Hormigueo o debilidad en un brazo o pierna, dificultad repentina en el habla y debilidad de un lado del rostro, sí lo son."
+            },
+            {
+                // Nivel 4: Bosque - 3 enfocadas + 1 desenfocada
+                imagenes: [
+                    "Bosque enfocado 1.jpg",
+                    "Bosque enfocado 2.jpg",
+                    "Bosque enfocado.jpg",
+                    "Bosque desenfocado 2.jpg"  // NO CORRESPONDE
+                ],
+                respuestaCorrecta: "Bosque desenfocado 2.jpg",
+                explicacion: "Problemas repentinos de visión en un ojo o en ambos es un síntoma que puede aparecer de forma repentina. Si observás esto, debés actuar con velocidad."
+            },
+            {
+                // Nivel 5: Hábitos saludables - 3 que pertenecen + 1 que no
+                imagenes: [
+                    "habito saludable aguapertence1.jpg",
+                    "habito saludable bici pertenece3.jpg",
+                    "habito saludable ensalada pertenece2.jpg",
+                    "habitno no saludable gaseosano pertenece.jpg"  // NO CORRESPONDE
+                ],
+                respuestaCorrecta: "habitno no saludable gaseosano pertenece.jpg",
+                explicacion: "Llevar a cabo hábitos saludables ayudan a prevenir el ACV."
+            },
+            {
+                // Nivel 6: Anatomía - 3 que pertenecen + 1 que no
+                imagenes: [
+                    "control_cerebro_si.jpg",
+                    "control corazon pertenece1.jpg",
+                    "control presion pertenece.jpeg",
+                    "control pulmones Pulmones No.jpg"  // NO CORRESPONDE
+                ],
+                respuestaCorrecta: "control pulmones Pulmones No.jpg",
+                explicacion: "El ACV ocurre en el cerebro, pero su causa está en los vasos sanguíneos y el corazón. Los pulmones no participan en este sistema, por eso no corresponden esta imagen"
+            }
+        ];
+        
+        // Configuración del juego
+        const TIME_PER_ROUND = 15; // Segundos para responder cada nivel
+        const bgImageRed = "templateACV-1 copia.jpg";
+        const bgImageGreen = "templateACV-2 copia.jpg";
+
+        // ######################################################################
+        // ##### FIN DE LA SECCIÓN DE MODIFICACIÓN. NO TOCAR EL CÓDIGO DE ABAJO ###
+        // ######################################################################
+        
+        // Elementos de la UI
+        const startScreen = document.getElementById('start-screen');
+        const mainCard = document.getElementById('main-card');
+        const bgRedButton = document.getElementById('bg-red-button');
+        const bgGreenButton = document.getElementById('bg-green-button');
+
+        const scoreEl = document.getElementById('score');
+        const roundCounterEl = document.getElementById('round-counter');
+        const imageElements = [ document.getElementById('img-0'), document.getElementById('img-1'), document.getElementById('img-2'), document.getElementById('img-3') ];
+        const imageCards = document.querySelectorAll('.image-card');
+        const feedbackContainer = document.getElementById('feedback-container');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackText = document.getElementById('feedback-text');
+        const nextButton = document.getElementById('next-button');
+        const finalScreen = document.getElementById('final-screen');
+        const finalScoreEl = document.getElementById('final-score');
+        const restartButton = document.getElementById('restart-button');
+        const gameContainer = document.getElementById('game-container');
+        const gameContent = document.getElementById('game-content');
+        const timerBar = document.getElementById('timer-bar');
+
+        // Estado del juego
+        let currentRound = 0;
+        let score = 0;
+        let timeLeft = TIME_PER_ROUND;
+        let timerId = null;
+
+        // --- FUNCIONES DEL JUEGO ---
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function startTimer() {
+            timeLeft = TIME_PER_ROUND;
+            timerBar.style.transition = 'none';
+            timerBar.style.width = '100%';
+            timerBar.classList.remove('bg-red-500', 'bg-amber-500');
+            timerBar.classList.add('bg-blue-600');
+            
+            void timerBar.offsetWidth; 
+            timerBar.style.transition = `width ${TIME_PER_ROUND}s linear, background-color 0.5s ease`;
+            timerBar.style.width = '0%';
+
+            timerId = setInterval(() => {
+                timeLeft--;
+                if (timeLeft <= 5 && timeLeft > 0) {
+                     timerBar.classList.remove('bg-blue-600');
+                     timerBar.classList.add('bg-amber-500');
+                } else if (timeLeft <= 0) {
+                    handleTimeUp();
+                }
+            }, 1000);
+        }
+        
+        function stopTimer() {
+            clearInterval(timerId);
+            const currentWidth = (timeLeft / TIME_PER_ROUND) * 100;
+            timerBar.style.width = `${currentWidth}%`;
+            timerBar.style.transition = 'none';
+        }
+
+        function handleTimeUp() {
+            stopTimer();
+            imageCards.forEach(card => card.classList.add('disabled'));
+            feedbackContainer.classList.remove('hidden');
+            
+            feedbackTitle.textContent = '¡Se acabó el tiempo!';
+            feedbackContainer.className = 'min-h-[100px] p-4 rounded-lg mb-6 bg-amber-50 text-amber-800';
+            feedbackTitle.className = 'text-xl font-bold text-amber-600';
+
+            imageCards.forEach(card => {
+                const img = card.querySelector('img');
+                if (img.dataset.isCorrect === 'true') {
+                    card.classList.add('correct-answer');
+                } else {
+                    card.classList.add('faded');
+                }
+            });
+
+            feedbackText.textContent = nivelesDelJuego[currentRound].explicacion;
+            nextButton.classList.remove('hidden');
+        }
+
+        function loadRound(roundIndex) {
+            imageCards.forEach(card => {
+                card.classList.remove('correct-answer', 'wrong-answer', 'disabled', 'faded');
+                card.style.transform = '';
+            });
+            feedbackContainer.classList.add('hidden');
+            nextButton.classList.add('hidden');
+            gameContent.classList.remove('hidden');
+            finalScreen.classList.add('hidden');
+
+            const levelData = nivelesDelJuego[roundIndex];
+            const roundImages = shuffleArray([...levelData.imagenes]);
+
+            imageElements.forEach((img, index) => {
+                img.src = roundImages[index];
+                img.dataset.isCorrect = (roundImages[index] === levelData.respuestaCorrecta).toString();
+            });
+
+            roundCounterEl.textContent = `${roundIndex + 1} / ${nivelesDelJuego.length}`;
+            scoreEl.textContent = score;
+            startTimer();
+        }
+
+        function handleImageClick(event) {
+            stopTimer();
+            const clickedCard = event.currentTarget;
+            const clickedImg = clickedCard.querySelector('img');
+            const isCorrect = clickedImg.dataset.isCorrect === 'true';
+
+            imageCards.forEach(card => card.classList.add('disabled'));
+            feedbackContainer.classList.remove('hidden');
+
+            if (isCorrect) {
+                const pointsWon = 50 + Math.floor(timeLeft * 10);
+                score += pointsWon;
+                scoreEl.textContent = score;
+                clickedCard.classList.add('correct-answer');
+                feedbackTitle.textContent = `¡Correcto! +${pointsWon} puntos`;
+                feedbackContainer.className = 'min-h-[100px] p-4 rounded-lg mb-6 bg-green-50';
+                feedbackTitle.className = 'text-xl font-bold text-green-600';
+            } else {
+                clickedCard.classList.add('wrong-answer');
+                feedbackTitle.textContent = 'Incorrecto';
+                feedbackContainer.className = 'min-h-[100px] p-4 rounded-lg mb-6 bg-red-50';
+                feedbackTitle.className = 'text-xl font-bold text-red-600';
+            }
+            
+            imageCards.forEach(card => {
+                const img = card.querySelector('img');
+                 if (img.dataset.isCorrect === 'true') {
+                    card.classList.add('correct-answer');
+                 } else if (card !== clickedCard) {
+                    card.classList.add('faded');
+                 }
+            });
+            
+            feedbackText.textContent = nivelesDelJuego[currentRound].explicacion;
+            nextButton.classList.remove('hidden');
+        }
+        
+        function showFinalScreen() {
+            gameContent.classList.add('hidden');
+            feedbackContainer.classList.add('hidden');
+            nextButton.classList.add('hidden');
+            finalScreen.classList.remove('hidden');
+            finalScoreEl.textContent = score;
+        }
+        
+        // --- INICIALIZACIÓN DEL JUEGO ---
+
+        function startGame(background) {
+            if (background.includes('.jpg') || background.includes('.png') || background.includes('.jpeg')) {
+                document.body.style.backgroundImage = `url("${background}")`;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundPosition = 'center';
+                document.body.style.backgroundAttachment = 'fixed';
+                document.body.style.backgroundColor = '';
+            } else {
+                document.body.style.backgroundImage = 'none';
+                document.body.style.backgroundColor = background;
+            }
+
+            startScreen.classList.add('hidden');
+            mainCard.classList.remove('hidden');
+            loadRound(0);
+        }
+
+
+        // --- EVENT LISTENERS ---
+
+        bgRedButton.addEventListener('click', () => {
+            startGame(bgImageRed);
+        });
+        
+        bgGreenButton.addEventListener('click', () => {
+            startGame(bgImageGreen);
+        });
+
+        nextButton.addEventListener('click', () => {
+            currentRound++;
+            if (currentRound < nivelesDelJuego.length) {
+                loadRound(currentRound);
+            } else {
+                showFinalScreen();
+            }
+        });
+
+        restartButton.addEventListener('click', () => {
+            currentRound = 0;
+            score = 0;
+            // No vuelve a la pantalla de selección, solo reinicia el juego.
+            loadRound(0);
+        });
+
+        imageCards.forEach(card => {
+            card.addEventListener('click', handleImageClick);
+        });
+
+    </script>
+</body>
+</html>

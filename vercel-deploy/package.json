@@ -1,0 +1,13 @@
+{
+  "name": "juego-uno-no-corresponde",
+  "version": "1.0.0",
+  "description": "Juego educativo sobre ACV - Uno no corresponde",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "build": "echo 'No build step needed'"
+  },
+  "keywords": ["juego", "educativo", "ACV", "salud"],
+  "author": "Santiago Balosky",
+  "license": "MIT"
+}

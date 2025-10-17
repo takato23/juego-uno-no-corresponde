@@ -1,0 +1,25 @@
+{
+  "name": "Uno no corresponde - Juego educativo ACV",
+  "short_name": "Uno no corresponde",
+  "description": "Juego educativo sobre ACV para tablets Android",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "theme_color": "#ef4444",
+  "background_color": "#111",
+  "icons": [
+    {
+      "src": "templateACV-1 copia.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "templateACV-2 copia.jpg", 
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ],
+  "categories": ["education", "games", "health"],
+  "lang": "es",
+  "dir": "ltr"
+}
